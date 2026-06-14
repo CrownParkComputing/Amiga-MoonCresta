@@ -13,7 +13,6 @@
 # NOTE: paths in a PyInstaller spec are relative to the spec's directory, so we
 # anchor everything on SPECPATH (= the tools/ dir injected by PyInstaller).
 import os
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 HERE = SPECPATH                      # tools/
 ROOT = os.path.dirname(HERE)         # repo root
@@ -23,10 +22,10 @@ datas = [
     (os.path.join(ROOT, 'prebuilt', 'mooncrst'), '.'),
     (os.path.join(ROOT, 'prebuilt', 'mooncrst.adf'), '.'),
 ]
-# amitools (xdftool) is imported lazily inside mc_pack, so pull it in explicitly.
-# machine68k (its optional 'vamos' extra) is not needed and not installed.
-datas += collect_data_files('amitools')
-hiddenimports = ['mc_pack'] + collect_submodules('amitools')
+# xdftool (amitools.fs) is imported lazily in mc_pack; PyInstaller follows that
+# import on its own. We must NOT pull in amitools.vamos -- it needs machine68k
+# (the optional 'vamos' extra) which isn't installed and would abort the build.
+hiddenimports = ['mc_pack', 'amitools.tools.xdftool']
 
 a = Analysis(
     [os.path.join(HERE, 'gui_packager.py')],
@@ -36,7 +35,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
-    excludes=['machine68k'],
+    excludes=['machine68k', 'amitools.vamos'],
     noarchive=False,
 )
 pyz = PYZ(a.pure)
