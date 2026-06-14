@@ -1,0 +1,100 @@
+{
+  "game": "twincobr",
+  "_comment": "Twin Cobra (Toaplan) I/O map. Authoritative source: MAME src/mame/toaplan/twincobr.cpp address_maps (verified verbatim, not from memory). THREE CPUs: 68000 main (near-native on Amiga), Z80 sound, TMS32010 DSP. The DSP and Z80 each share a RAM window with the 68000 -- those windows are the protection/comms handshake and must be modelled exactly. NOTE: the tile layers are NOT directly memory-mapped: you load a VRAM address via the CRTC (0x060001/3) then read/write through the data ports at 0x07e00x (Toaplan address-then-data quirk).",
+
+  "clocks": {
+    "xtal_mhz": 28.0,
+    "m68000_mhz": 7.0,
+    "z80_mhz": 3.5,
+    "tms32010_mhz": 14.0
+  },
+
+  "hardware": {
+    "video_width": 320,
+    "video_height": 240,
+    "orientation": "ROT270",
+    "layers": ["text8x8", "bg_tilemap", "fg_tilemap", "sprites"],
+    "palette_format": "xBGR_555",
+    "palette_colors": 1792,
+    "tile_size": 8,
+    "bpp_text": 3,
+    "bpp_tiles": 4,
+    "bpp_sprites": 4
+  },
+
+  "m68000": {
+    "_role": "main game logic -- runs near-native on the Amiga 68k",
+    "memory_map": {
+      "0x000000-0x02ffff": {"kind": "rom",       "backing": "main_68k_rom",     "comment": "0x30000: b30_01/03 (low) + b30_26/27 (high)"},
+      "0x030000-0x033fff": {"kind": "ram_shared","backing": "dsp_shared_ram",   "comment": "MAIN WORK RAM, ALSO the 68K<->TMS32010 shared window (DSP reads/writes it via its ports 00/01)"},
+      "0x040000-0x040fff": {"kind": "sprite_ram","backing": "sprite_ram16"},
+      "0x050000-0x050dff": {"kind": "palette",   "backing": "palette_ram",      "comment": "xBGR555, 1792 colours"}
+    },
+    "io_read": {
+      "0x078000": {"kind": "dsw1",      "handler": "hal_tc_dsw1"},
+      "0x078002": {"kind": "dsw2",      "handler": "hal_tc_dsw2"},
+      "0x078004": {"kind": "p1",        "handler": "hal_tc_p1",        "comment": "Player 1 joystick + buttons"},
+      "0x078006": {"kind": "p2",        "handler": "hal_tc_p2",        "comment": "Player 2 joystick + buttons"},
+      "0x078008": {"kind": "sys",       "handler": "hal_tc_sys",       "comment": "VBLANK + coin/service inputs"},
+      "0x07e000": {"kind": "vram_text_data", "handler": "hal_tc_vram_rd", "comment": "text VRAM data port (addr set via CRTC 0x060001/3)"},
+      "0x07e002": {"kind": "vram_bg_data",   "handler": "hal_tc_vram_rd"},
+      "0x07e004": {"kind": "vram_fg_data",   "handler": "hal_tc_vram_rd"},
+      "0x07a000-0x07afff": {"kind": "ram_shared", "backing": "z80_shared_ram", "comment": "68K<->Z80 shared RAM (0x8000-0x87ff on Z80 side)"}
+    },
+    "io_write": {
+      "0x060001": {"kind": "crtc_addr",  "handler": "hal_tc_crtc_addr", "comment": "CRTC address register"},
+      "0x060003": {"kind": "crtc_reg",   "handler": "hal_tc_crtc_reg",  "comment": "CRTC data register (also selects VRAM access address)"},
+      "0x070000": {"kind": "scroll_text","handler": "hal_tc_scroll",    "comment": "text layer scroll (x at 0x070000/1, y at 0x070002/3)"},
+      "0x070004": {"kind": "offset_text","handler": "hal_tc_offset"},
+      "0x072000": {"kind": "scroll_bg",  "handler": "hal_tc_scroll"},
+      "0x072004": {"kind": "offset_bg",  "handler": "hal_tc_offset"},
+      "0x074000": {"kind": "scroll_fg",  "handler": "hal_tc_scroll"},
+      "0x074004": {"kind": "offset_fg",  "handler": "hal_tc_offset"},
+      "0x076000": {"kind": "scroll_spare","handler": "hal_tc_scroll"},
+      "0x07800b": {"kind": "dsp_coin_latch_fshark", "handler": "hal_tc_latch", "comment": "Flying Shark DSP/coin latch (clone path)"},
+      "0x07800d": {"kind": "dsp_sys_latch", "handler": "hal_tc_dsp_ctrl", "comment": "Twin Cobra DSP/system control latch -- enables/triggers the DSP, screen flip, etc. KEY protection handshake."},
+      "0x07e000": {"kind": "vram_text_data", "handler": "hal_tc_vram_wr"},
+      "0x07e002": {"kind": "vram_bg_data",   "handler": "hal_tc_vram_wr"},
+      "0x07e004": {"kind": "vram_fg_data",   "handler": "hal_tc_vram_wr"}
+    }
+  },
+
+  "z80": {
+    "_role": "sound driver (YM3812/OPL2); small -- interpret with vendored z80.c or sample-stub",
+    "memory_map": {
+      "0x0000-0x7fff": {"kind": "rom", "backing": "sound_z80_rom", "comment": "b30_05_ii.4f, 32K"},
+      "0x8000-0x87ff": {"kind": "ram_shared", "backing": "z80_shared_ram", "comment": "shared with 68K at 0x07a000"}
+    },
+    "io_read": {
+      "0x00": {"kind": "ym3812_status", "handler": "hal_tc_ym_rd"},
+      "0x40": {"kind": "dsw1"},
+      "0x50": {"kind": "dsw2"}
+    },
+    "io_write": {
+      "0x00": {"kind": "ym3812_addr", "handler": "hal_tc_ym_wr"},
+      "0x01": {"kind": "ym3812_data", "handler": "hal_tc_ym_wr"},
+      "0x10": {"kind": "coin_start_in", "comment": "Twin Cobra coin/start inputs (read on some sets)"},
+      "0x20": {"kind": "coin_counter"}
+    }
+  },
+
+  "tms32010_dsp": {
+    "_role": "PROTECTION + scroll/sprite math. Make-or-break. No core vendored yet; MAME tms32010 is the reference.",
+    "program_space": {
+      "0x000-0x7ff": {"kind": "rom", "backing": "dsp_rom", "comment": "dsp_21.bin + dsp_22.bin -> 16-bit opcodes, word access only"}
+    },
+    "data_space": {
+      "0x00-0x90": {"kind": "internal_ram", "comment": "TMS32010 on-chip RAM (words)"}
+    },
+    "io_handshake": {
+      "port0": {"dir": "out", "kind": "addr", "comment": "address of 68K memory the DSP wants to access"},
+      "port1": {"dir": "inout", "kind": "data", "comment": "data read/written at the 68K address in port0 -> reaches into 68K 0x030000-0x033fff"},
+      "port3_bit15": {"dir": "in", "kind": "BIO", "comment": "drives the DSP BIO branch input"}
+    }
+  },
+
+  "handshakes": {
+    "m68k_dsp": "68K shares 0x030000-0x033fff (its work RAM). DSP reaches in via ports 00 (addr) / 01 (data). 68K controls the DSP through the 0x07800d system latch. Game hangs / mis-scrolls if this is wrong.",
+    "m68k_z80": "68K window 0x07a000-0x07afff == Z80 0x8000-0x87ff. Command/response bytes for sound."
+  }
+}

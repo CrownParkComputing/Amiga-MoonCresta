@@ -1,0 +1,36 @@
+# games/galaga90/META.toml
+# Galaga '88 / Galaga '90 (Namco 1989). Skeleton.
+
+[game]
+name         = "galaga90"
+title        = "Galaga '90"
+year         = 1989
+manufacturer = "Namco"
+# rom_zip   = "/home/jon/Downloads/zarcade/galaga90.zip"
+
+[video]
+resolution  = [288, 224]
+sprite_size = 16
+tile_size   = 32
+bpp         = 4
+
+[video.layers]
+tilemap_bg = { count = 1, tile_size = 32, scroll = "parallax" }
+tilemap_mid = { count = 2, tile_size = 16, scroll = "parallax" }
+sprite     = { count = 128, multicolor = true }
+
+[audio]
+sound_cpu  = "6809E"
+sound_chip = "Namco C140"
+channels   = 8
+
+[io_map]
+file = "io_map.json"
+
+[mcu]
+kind = ""
+
+[build]
+flags  = ["RELEASE", "OCS"]
+target = "galaga90_amiga"
+slave  = "galaga90_amiga.slave"

@@ -1,0 +1,56 @@
+; amiberry config -- pacland-amiga "see something on screen" test
+; ============================================================
+; This config boots an A500 with 8MB fast RAM, mounts our
+; build directory as DH1: (named "NAMCO"), and runs the
+; pacland binary from CLI.
+;
+; The pacland binary is a hunk executable -- it does its own
+; screen setup via direct custom-chip programming in
+; src/hal/video.c. No WHDLoad needed for this smoke test.
+; ============================================================
+
+[config]
+config_version=1
+config_hardware=1
+config_host=0
+config_gui=0
+
+; A500 with 8MB fast RAM (so AllocMem finds a CHIP chunk)
+amiga_model=A500
+chipmem_size=2
+bogomem_size=7
+fastmem_size=8
+
+; Kickstart 1.3 (the most permissive for raw hunk executables)
+kickstart_rom_file=/home/jon/Amiberry/ROMs/kick40068.A1200.rom
+kickstart_rom_file_id=0
+kickstart_rom_type=ROM_KICK
+
+; No real drives -- everything comes from the host
+; filesystem
+nr_floppies=0
+hardfile=rw,DH1:amiga/:/home/jon/pacland-amiga/build/,32
+
+; Auto-run the binary on boot
+uae_hide_cursor=1
+console_output=1
+
+; Disable annoying screen lag
+cpu_compatible=1
+cpu_cycle_exact=1
+immediate_blits=1
+waiting_blits=1
+
+; Logging
+log_file=/home/jon/pacland-amiga/amiberry.log
+log_console=1
+log_console_limit=200
+
+[sound]
+sound=0
+
+[video]
+gfx_width=640
+gfx_height=512
+gfx_linemode=double
+gfx_fullscreen=0

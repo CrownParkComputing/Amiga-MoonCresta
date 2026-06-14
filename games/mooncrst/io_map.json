@@ -1,0 +1,42 @@
+{
+  "game": "mooncrst",
+  "_comment": "Galaxian-family (Moon Cresta) I/O map. Mirrors the validated decode in zarcade machine-galaxian/board/MoonCrestaBoard.kt. Galaxian hardware overlaps read inputs and write controls at the same address, so we use the split io_read / io_write blocks rather than the single io_map block. Each I/O port group is selected by the high address byte (0xa0/0xa8/0xb0/0xb8); the low 3 bits are sub-decoded inside the handler.",
+
+  "hardware": {
+    "video_width": 256,
+    "video_height": 224,
+    "tilemap_cols": 32,
+    "tilemap_rows": 32,
+    "tile_size": 8,
+    "max_sprites": 8,
+    "max_bullets": 8,
+    "bpp": 2
+  },
+
+  "memory_map": {
+    "0x0000-0x3fff": {"kind": "rom",     "backing": "main_z80_rom",        "comment": "8x 2K EPROMs epr194..epr201"},
+    "0x8000-0x87ff": {"kind": "ram",     "backing": "main_work_ram"},
+    "0x9000-0x93ff": {"kind": "tilemap", "backing": "main_video_ram",      "comment": "32x32 cells, tile index 0..255"},
+    "0x9400-0x97ff": {"kind": "ram",     "backing": "main_video_ram",      "comment": "VRAM mirror (hardware masks to 0x3ff)"},
+    "0x9800-0x983f": {"kind": "ram",     "backing": "tile_attribute_ram",  "comment": "per-column scroll (even) + color (odd)"},
+    "0x9840-0x985f": {"kind": "ram",     "backing": "sprite_ram",          "comment": "8 sprites x 4 bytes [y,x,code,attr]"},
+    "0x9860-0x987f": {"kind": "ram",     "backing": "bullet_ram",          "comment": "8 bullets x 4 bytes"}
+  },
+
+  "io_read": {
+    "0xa000": {"kind": "in0",  "handler": "hal_input_in0",  "comment": "joystick + coin 1 + 1P/2P start"},
+    "0xa800": {"kind": "in1",  "handler": "hal_input_in1",  "comment": "button + tilt + coin 2"},
+    "0xb000": {"kind": "dsw0", "handler": "hal_input_dsw0", "comment": "DIP switches (lives, bonus, coinage)"}
+  },
+
+  "io_write": {
+    "0xa000": {"kind": "port_a000_ctrl", "handler": "hal_port_a000",
+               "comment": "sub-decode on (addr & 7): 0-2 = gfx tile-bank select (Moon Cresta delta vs base Galaxian, where these bits are lamps/coin), 3 = coin counter, 4-7 = sound LFO frequency"},
+    "0xa800": {"kind": "sound_ctrl",     "handler": "hal_sound_ctrl",
+               "comment": "sub-decode on (addr & 7): background/noise/shoot enables + volume"},
+    "0xb000": {"kind": "port_b000_ctrl", "handler": "hal_port_b000",
+               "comment": "sub-decode on (addr & 7): 0 = NMI enable, 4 = stars enable, 6 = flip X, 7 = flip Y"},
+    "0xb800": {"kind": "sound_pitch",    "handler": "hal_sound_pitch",
+               "comment": "discrete-sound pitch latch"}
+  }
+}

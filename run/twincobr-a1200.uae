@@ -1,0 +1,55 @@
+; amiberry config -- Moon Cresta first-light boot, A1200 / AGA
+; ============================================================
+; Boots an A1200 (68020 + AGA + Kickstart 3.1) and mounts the
+; build/mooncrst_boot directory as a bootable virtual disk
+; (DH0:). On boot, S/Startup-Sequence runs SYS:mooncrst, which
+; does its own screen setup (4-colour test pattern) via direct
+; custom-chip programming in src/hal/video.c, then waits for the
+; left mouse button.
+;
+; No WHDLoad / ADF needed -- a UAE directory filesystem is
+; bootable, so the raw hunk exe runs straight from CLI.
+;
+; Run headless with:
+;   amiberry -f run/mooncrst-a1200.uae -s use_gui=no
+; ============================================================
+
+[config]
+config_version=8.1.6
+config_hardware=1
+config_host=1
+
+; ---- A1200: 68020 + AGA + 2MB chip ----
+amiga_model=A1200
+chipset=aga
+chipset_compatible=A1200
+cpu_type=68020
+cpu_model=68020
+cpu_compatible=true
+chipmem_size=4
+fastmem_size=8
+
+; ---- Kickstart 3.1 (A1200) ----
+kickstart_rom_file=/home/jon/Amiberry/ROMs/kick40068.A1200.rom
+
+; ---- no floppies; boot from the directory filesystem ----
+nr_floppies=0
+floppy0type=-1
+
+; DH0: = our build/mooncrst_boot dir, bootpri 0 (bootable)
+filesystem2=rw,DH0:MoonCresta:/home/jon/pacland-amiga/build/mooncrst_boot,0
+uaehf0=dir,rw,DH0:MoonCresta:/home/jon/pacland-amiga/build/mooncrst_boot,0
+
+; ---- display ----
+gfx_width=640
+gfx_height=512
+gfx_linemode=double
+gfx_fullscreen=0
+immediate_blits=true
+
+; ---- logging ----
+log_file=/home/jon/pacland-amiga/amiberry.log
+log_console=1
+
+[sound]
+sound=0

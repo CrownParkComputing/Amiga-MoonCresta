@@ -1,0 +1,58 @@
+name: build
+
+# Builds the Moon Cresta ADF in CI. The ROM is copyrighted and is NOT in the
+# repo, so a full ADF build only runs when the maintainer has added their own
+# ROM set as a base64 secret (MOONCRESTA_ROM_B64 = base64 of a tar.gz that
+# expands to games/mooncrst/{roms,gfx,mmi6331.6l}). Without it, CI just does a
+# compile-check of the ROM-independent core.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: amigadev/crosstools:latest      # m68k-amigaos-gcc + vasm + vlink
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Host tools
+        run: |
+          apt-get update -y && apt-get install -y python3 python3-pip
+          pip3 install --break-system-packages amitools machine68k 2>/dev/null \
+            || pip3 install amitools machine68k
+
+      - name: Provide ROM (from secret, if configured)
+        env:
+          ROM_B64: ${{ secrets.MOONCRESTA_ROM_B64 }}
+        run: |
+          if [ -n "$ROM_B64" ]; then
+            echo "$ROM_B64" | base64 -d > /tmp/rom.tar.gz
+            tar xzf /tmp/rom.tar.gz
+            python3 tools/make_romdata.py
+            echo "HAVE_ROM=1" >> "$GITHUB_ENV"
+          else
+            echo "No MOONCRESTA_ROM_B64 secret -> compile-check only."
+          fi
+
+      - name: Build ADF
+        if: env.HAVE_ROM == '1'
+        run: |
+          export PATH="/opt/amiga/bin:$PATH"
+          make GAME=mooncrst adf
+
+      - name: Upload ADF artifact
+        if: env.HAVE_ROM == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mooncrst-adf
+          path: build/mooncrst.adf
+
+      - name: Compile check (no ROM)
+        if: env.HAVE_ROM != '1'
+        run: |
+          gcc -O2 -Isrc/cores -Isrc/hal -c src/cores/z80.c   -o /tmp/z80.o
+          gcc -O2 -Isrc/cores -Isrc/hal -c src/hal/machine.c -o /tmp/machine.o
+          echo "Core compiles. Add the MOONCRESTA_ROM_B64 secret to build a full ADF."

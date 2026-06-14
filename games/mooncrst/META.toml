@@ -1,0 +1,114 @@
+# games/mooncrst/META.toml
+# Moon Cresta (Nichibutsu/Gremlin 1980)
+# =============================================================
+# MAME driver:  src/mame/drivers/galdrvr.c
+# MAME sets:    mooncrst, mooncrstu, mooncrsto, mooncrstg
+# This zip is:  mooncrstg (Gremlin) -- UNENCRYPTED program ROMs.
+#               (Only the Nichibutsu "mooncrst" set is encrypted; the
+#                Gremlin epr194..201 run raw -- entry is the textbook
+#                "xor a; ld ($b000),a; jp $00ad" Galaxian cold start.)
+#
+# Hardware: Z80 @ 3.072 MHz + 2bpp bitmap + 8x8 tilemap
+# Display:  256x224 (visible) on a 288x224 MAME virtual screen
+# Sprites:  8 (slot, x, y, color) at 0x9840
+# Bullets:  8 (slot, x, y) at 0x9860
+# Stars:    hardware-generated (LFSR) -- not in main RAM
+
+[game]
+name         = "mooncrst"
+title        = "Moon Cresta"
+year         = 1980
+manufacturer = "Nichibutsu (Gremlin)"
+mame_driver  = "mooncrstg"          # MAME rom set we have
+mame_source  = "src/mame/drivers/galdrvr.c"
+
+[cpu]
+main         = "z80"
+clock_mhz    = 3.072
+
+[sound]
+chip         = "discrete_galaxian"  # 3-channel analog
+channels     = 3
+note         = "Wired to the same SOUND_OUT_* ports as Galaxian"
+
+[video]
+resolution_w = 256
+resolution_h = 224
+tile_size    = 8
+tilemap_cols = 32
+tilemap_rows = 32
+tilemap_addr = "0x9000"            # main video RAM
+attr_addr    = "0x9800"            # tile attribute (color)
+sprite_addr  = "0x9840"            # 8 sprites x 4 bytes
+bullet_addr  = "0x9860"            # 8 bullets x 4 bytes
+bpp          = 2                   # 4 colours per tile, hard-coded
+
+[roms]
+# The Nichibutsu/Gremlin "mooncrstg" set. All CRCs verified
+# against the MAME galdrvr.c ROM_START block.
+rom_zip      = "/home/jon/Downloads/zarcade/mooncrst.zip"
+
+[[roms.files]]
+path         = "roms/epr194"        # 0x0000
+crc32        = "0e5582b1"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr195"        # 0x0800
+crc32        = "12cb201b"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr196"        # 0x1000
+crc32        = "18255614"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr197"        # 0x1800
+crc32        = "05ac1466"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr198"        # 0x2000
+crc32        = "c28a2e8f"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr199"        # 0x2800
+crc32        = "5a4571de"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr200"        # 0x3000
+crc32        = "b7c85bf1"
+size         = 2048
+
+[[roms.files]]
+path         = "roms/epr201"        # 0x3800
+crc32        = "2caba07f"
+size         = 2048
+
+[roms.gfx]
+# 2bpp tile data, 2K each, total 8K
+# mcs_b is plane 0 lo, mcs_d is plane 1 lo, mcs_a is plane 0 hi,
+# mcs_c is plane 1 hi -- but in MAME the load order is:
+#   0x0000: mcs_b (plane 0 lo)  -- mooncrst / mooncrsto
+#   0x0800: mcs_d (plane 1 lo)
+#   0x1000: mcs_a (plane 0 hi)  -- but wait that's the "plane select"
+#   0x1800: mcs_c (plane 1 hi)
+# This is the Galaxian hardware "color priority" trick: each tile
+# is 2bpp, but the high bit is encoded as a separate rom so
+# different palettes can be applied to the high-bit pixels.
+crc32_mcs_a  = "5bc9493afa76c55858b8c8849524cbc77dc838fc"
+crc32_mcs_b  = "38a6679a8b69bc1870a0e67e692131c42f9535c8"
+crc32_mcs_c  = "08c6599db170dd6ee364c44f70a0f5c0f881b6ef"
+crc32_mcs_d  = "b8885c555c6ad7021be55c6925a0a0872c1b6abd"
+
+[roms.proms]
+# 32-byte color PROM (82s123-compatible)
+# Each nybble encodes a 4-colour palette index.
+# Format: 32 entries x 4 bits, used as high-palette index in
+# a 256-byte colour RAM.
+file         = "mmi6331.6l"
+crc32        = "6a0c7d87"
+size         = 32

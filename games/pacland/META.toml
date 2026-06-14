@@ -1,0 +1,39 @@
+# games/pacland/META.toml
+# Per-game metadata. Read by the build tools.
+# Adding a new game is: copy this template, edit, drop an io_map.json
+# next to it, run `make game-<name>`.
+
+[game]
+name         = "pacland"
+title        = "Pac-Land"
+year         = 1984
+manufacturer = "Namco"
+rom_zip      = "/home/jon/Downloads/zarcade/pacland.zip"
+
+[video]
+resolution  = [288, 224]
+sprite_size = 16
+tile_size   = 16
+bpp         = 4
+
+[video.layers]
+tilemap_bg = { count = 1, scroll = "horizontal_parallax" }
+tilemap_fg = { count = 1, scroll = "full" }
+sprite     = { count = 16 }
+
+[audio]
+sound_cpu  = "6809E"
+sound_chip = "Namco CUS30"
+channels   = 8
+
+[io_map]
+file = "io_map.json"
+
+[mcu]
+kind = "Namco 60A1"
+file = "cus60-60a1.mcu"
+
+[build]
+flags  = ["RELEASE", "OCS"]
+target = "pacland_amiga"
+slave  = "pacland_amiga.slave"

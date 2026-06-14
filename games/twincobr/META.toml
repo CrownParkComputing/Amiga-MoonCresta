@@ -1,0 +1,125 @@
+# games/twincobr/META.toml
+# Twin Cobra (Toaplan 1987) -- "twincobr" parent set (revision II)
+# =============================================================
+# MAME driver:  src/mame/drivers/twincobr.cpp  (shared: Flying Shark/
+#               Hishouzame, Wardner)  -- NOT toaplan1.cpp (GP9001 era).
+# Hardware:     "Twin Cobra" board (TP-013/014 lineage).
+#
+# THREE CPUs (this is the key delta vs Moon Cresta):
+#   - 68000   main game logic       -> NEAR-NATIVE on Amiga (the win)
+#   - Z80     sound (YM3812)         -> small, interpret or stub
+#   - TMS32010 DSP (protection+math) -> MUST emulate; game breaks without it
+#
+# Display: 320x240, vertical (TATE) shooter -- MAME uses ROT270.
+# Layers:  text(8x8) + fg tilemap + bg tilemap + sprites.
+#
+# CRCs below are VERIFIED (zlib.crc32 of the extracted files).
+# ROM->region role assignment is high-confidence from size/socket
+# naming; exact 68000 byte-interleave/offsets and which gfx ROM is
+# which plane still want a cross-check against twincobr.cpp ROM_START.
+
+[game]
+name         = "twincobr"
+title        = "Twin Cobra"
+year         = 1987
+manufacturer = "Toaplan / Taito"
+mame_driver  = "twincobr"
+mame_source  = "src/mame/drivers/twincobr.cpp"
+rom_zip      = "/home/jon/Downloads/twincobr.zip"
+
+[cpu]
+main         = "m68000"            # near-native on Amiga
+sound        = "z80"
+dsp          = "tms32010"          # protection + coordinate/collision math
+
+[sound]
+chip         = "ym3812"            # OPL2; + Z80 driver
+
+[video]
+resolution_w = 320
+resolution_h = 240
+orientation  = "ROT270"            # vertical shooter
+layers       = ["text8x8", "fg_tilemap", "bg_tilemap", "sprites"]
+note         = "RAM-based palette; PROMs are for mixing/priority, not the main palette"
+
+# ---- 68000 main program: 0x30000 region, EVEN/ODD byte-interleaved ----
+# ROM_LOAD16_BYTE pairs (verified vs twincobr.cpp ROM_START):
+#   b30_01.7j    -> 0x00000 (EVEN bytes), 0x10000 len
+#   b30_03.7h    -> 0x00001 (ODD  bytes), 0x10000 len   [fills 0x00000-0x1ffff]
+#   b30_26_ii.8j -> 0x20000 (EVEN bytes), 0x08000 len
+#   b30_27_ii.8h -> 0x20001 (ODD  bytes), 0x08000 len   [fills 0x20000-0x2ffff]
+# i.e. interleave 01/03 to make the low 128K, 26/27 to make the high 64K.
+[[roms.maincpu]]
+path = "maincpu/b30_01.7j"      ; crc32 = "07f64d13" ; size = 65536 ; load = "0x00000" ; bytes = "even"
+[[roms.maincpu]]
+path = "maincpu/b30_03.7h"      ; crc32 = "41be6978" ; size = 65536 ; load = "0x00001" ; bytes = "odd"
+[[roms.maincpu]]
+path = "maincpu/b30_26_ii.8j"   ; crc32 = "3a646618" ; size = 32768 ; load = "0x20000" ; bytes = "even"
+[[roms.maincpu]]
+path = "maincpu/b30_27_ii.8h"   ; crc32 = "d7d1e317" ; size = 32768 ; load = "0x20001" ; bytes = "odd"
+
+# ---- Z80 sound ----
+[[roms.audiocpu]]
+path = "audiocpu/b30_05_ii.4f"  ; crc32 = "e37b3c44" ; size = 32768
+
+# ---- TMS32010 DSP: 0x1000 region, EVEN/ODD interleaved -> 16-bit words ----
+#   dsp_21.bin -> 0x0000 (even/low), dsp_22.bin -> 0x0001 (odd/high)
+[[roms.dsp]]
+path = "dsp/dsp_21.bin"         ; crc32 = "2d135376" ; size = 2048 ; load = "0x0000" ; bytes = "even"
+[[roms.dsp]]
+path = "dsp/dsp_22.bin"         ; crc32 = "79389a71" ; size = 2048 ; load = "0x0001" ; bytes = "odd"
+
+# ---- GFX: text chars (3x16K = 0xc000, 3bpp) ----
+# Load order (verified): b30_08->0x0000, b30_07->0x4000, b30_06->0x8000
+[[roms.gfx_chars]]
+path = "gfx/chars/b30_08.8c"    ; crc32 = "0a254133" ; size = 16384 ; load = "0x0000"
+[[roms.gfx_chars]]
+path = "gfx/chars/b30_07.10b"   ; crc32 = "e9e2d4b1" ; size = 16384 ; load = "0x4000"
+[[roms.gfx_chars]]
+path = "gfx/chars/b30_06.8b"    ; crc32 = "a599d845" ; size = 16384 ; load = "0x8000"
+
+# ---- GFX: foreground tiles (fg_tiles, 4x64K = 0x40000, 4bpp) ----
+# Load order/offsets (verified vs ROM_START):
+#   b30_16->0x00000, b30_15->0x10000, b30_13->0x20000, b30_14->0x30000
+[[roms.gfx_fg]]
+path = "gfx/fg/b30_16.20b"      ; crc32 = "15b3991d" ; size = 65536 ; load = "0x00000"
+[[roms.gfx_fg]]
+path = "gfx/fg/b30_15.18b"      ; crc32 = "d9e2e55d" ; size = 65536 ; load = "0x10000"
+[[roms.gfx_fg]]
+path = "gfx/fg/b30_13.18c"      ; crc32 = "13daeac8" ; size = 65536 ; load = "0x20000"
+[[roms.gfx_fg]]
+path = "gfx/fg/b30_14.20c"      ; crc32 = "8cc79357" ; size = 65536 ; load = "0x30000"
+
+# ---- GFX: background tiles (bg_tiles, 4x32K = 0x20000, 4bpp) ----
+# Load order/offsets (verified vs ROM_START):
+#   b30_12->0x00000, b30_11->0x08000, b30_10->0x10000, b30_09->0x18000
+[[roms.gfx_bg]]
+path = "gfx/bg/b30_12.16c"      ; crc32 = "b5d48389" ; size = 32768 ; load = "0x00000"
+[[roms.gfx_bg]]
+path = "gfx/bg/b30_11.14c"      ; crc32 = "97f20fdc" ; size = 32768 ; load = "0x08000"
+[[roms.gfx_bg]]
+path = "gfx/bg/b30_10.12c"      ; crc32 = "170c01db" ; size = 32768 ; load = "0x10000"
+[[roms.gfx_bg]]
+path = "gfx/bg/b30_09.10c"      ; crc32 = "44f5accd" ; size = 32768 ; load = "0x18000"
+
+# ---- GFX: sprites (4x64K, 4bpp) ----
+[[roms.gfx_sprites]]
+path = "gfx/sprites/b30_17.16d" ; crc32 = "4264bff8" ; size = 65536
+[[roms.gfx_sprites]]
+path = "gfx/sprites/b30_18.15d" ; crc32 = "806fb374" ; size = 65536
+[[roms.gfx_sprites]]
+path = "gfx/sprites/b30_19.14d" ; crc32 = "9cb8675e" ; size = 65536
+[[roms.gfx_sprites]]
+path = "gfx/sprites/b30_20.12d" ; crc32 = "cb4092b8" ; size = 65536
+
+# ---- PROMs (mixing/priority; verify roles in twincobr.cpp) ----
+[[roms.proms]]
+path = "proms/82s123.b24"       ; crc32 = "4fb5df2a" ; size = 32
+[[roms.proms]]
+path = "proms/82s123.d2"        ; crc32 = "f72482db" ; size = 32
+[[roms.proms]]
+path = "proms/82s123.e18"       ; crc32 = "bc88cced" ; size = 32
+[[roms.proms]]
+path = "proms/82s129.d3"        ; crc32 = "24e7d62f" ; size = 256
+[[roms.proms]]
+path = "proms/82s129.d4"        ; crc32 = "a50cef09" ; size = 256

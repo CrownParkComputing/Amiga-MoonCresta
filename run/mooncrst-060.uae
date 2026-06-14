@@ -1,0 +1,39 @@
+; amiberry config -- Moon Cresta, A1200 + 68060 (Blizzard 1260) / AGA
+; ============================================================
+; The honest full-speed target. Measured: stock A1200 020@14 ~10fps;
+; A4000 040@25 ~36fps (60%). A 68060 @ 50MHz (~6-8x stock 020) clears
+; 60fps with headroom. This emulates a Blizzard 1260 in an A1200 --
+; a real, common accelerator -- so the number reflects real hardware.
+;
+;   amiberry -f run/mooncrst-060.uae -s use_gui=no
+; ============================================================
+
+[config]
+config_version=8.1.6
+config_hardware=1
+config_host=1
+
+amiga_model=A1200
+chipset=aga
+chipset_compatible=A1200
+cpu_model=68060
+fpu_model=68060
+cpu_compatible=false
+cpu_24bit_addressing=false
+chipmem_size=4
+fastmem_size=16
+
+kickstart_rom_file=/home/jon/Amiberry/ROMs/kick40068.A1200.rom
+
+nr_floppies=1
+floppy0=/home/jon/pacland-amiga/build/mooncrst.adf
+floppy0type=0
+
+gfx_width=640
+gfx_height=512
+gfx_linemode=double
+gfx_fullscreen=0
+immediate_blits=true
+
+[sound]
+sound=0

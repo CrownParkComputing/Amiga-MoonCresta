@@ -1,0 +1,47 @@
+# .pre-commit-config.yaml
+#
+# Pre-commit hooks: install once with `pre-commit install` and every
+# `git commit` will get linted/typed/black-ed automatically. Saves
+# years of bikeshed. Remove or extend as needed.
+#
+# Setup:
+#   pip install pre-commit   (or uv tool install pre-commit)
+#   cd /home/jon/pacland-amiga
+#   pre-commit install
+#
+# Run on demand against the whole tree:
+#   pre-commit run --all-files
+#
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        files: ^src/pacland_tools/.*\.py$
+        additional_dependencies: []
+        # mypy needs the package to be importable; the Makefile adds
+        # src/ to PYTHONPATH. uncomment if running outside Make:
+        # args: ["--explicit-package-bases"]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+        # amiberry/whdload_db.xml is ~700KB; the .so jniLibs and ROM
+        # blobs are deliberately not committed. The 1MB ceiling here
+        # is conservative.
+      - id: mixed-line-ending
+        args: ["--fix=lf"]

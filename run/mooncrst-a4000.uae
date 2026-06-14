@@ -1,0 +1,40 @@
+; amiberry config -- Moon Cresta, A4000 / 68040 / AGA
+; ============================================================
+; Full-speed demo target. The Z80 interpreter is CPU-bound and
+; only manages ~10fps on a stock A1200 (68EC020 @ 14MHz); a
+; 68040 @ 25MHz runs the SAME exe at full 60fps. Boots the
+; bootable interpreter ADF in DF0:.
+;
+;   amiberry -f run/mooncrst-a4000.uae -s use_gui=no
+; ============================================================
+
+[config]
+config_version=8.1.6
+config_hardware=1
+config_host=1
+
+amiga_model=A4000
+chipset=aga
+chipset_compatible=A4000
+cpu_model=68040
+fpu_model=68040
+cpu_compatible=false
+cpu_24bit_addressing=false
+chipmem_size=4
+fastmem_size=8
+
+kickstart_rom_file=/home/jon/Amiberry/ROMs/kick40068.A4000.rom
+
+; One floppy: the Moon Cresta interpreter boot disk.
+nr_floppies=1
+floppy0=/home/jon/pacland-amiga/build/mooncrst.adf
+floppy0type=0
+
+gfx_width=640
+gfx_height=512
+gfx_linemode=double
+gfx_fullscreen=0
+immediate_blits=true
+
+[sound]
+sound=0

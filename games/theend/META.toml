@@ -1,0 +1,69 @@
+# games/theend/META.toml
+# The End (Konami / Stern, 1980)
+# =============================================================
+# Hardware: SCRAMBLE family (Konami) -- NOT Galaxian/Moon Cresta.
+# Authoritative spec: zarcade machine-scramble (ScrambleMemoryMap.kt,
+# ScrambleMachine.kt, ScrambleVideo.kt). MAME: galaxian/scramble.
+#
+# Confirmed unencrypted: entry is `xor a; ld ($6801),a; jp $0069`
+# ($6801 = Scramble NMI_ENABLE), disassembled with tools/z80dasm.py.
+
+[game]
+name         = "theend"
+title        = "The End"
+year         = 1980
+manufacturer = "Konami / Stern"
+
+[cpu]
+main         = "z80"          # Z80 @ 3.072 MHz
+clock_mhz    = 3.072
+sound        = "z80"          # second Z80 @ ~1.789 MHz + 2x AY-3-8910 (later stage)
+
+[video]
+# Galaxian-STYLE layout (our mc_render carries over) but Scramble base addresses.
+family       = "scramble"
+resolution_w = 224
+resolution_h = 256
+vram_addr    = "0x4800"       # 32x32 tilemap (mirror 0x4c00)
+attr_addr    = "0x5000"       # per-column scroll(even)+colour(odd)
+sprite_addr  = "0x5040"       # 8 sprites x 4 bytes
+bullet_addr  = "0x5060"
+
+[memory]
+rom          = "0x0000-0x3fff"
+ram          = "0x4000-0x47ff"
+nmi_enable   = "0x6801"
+coin_counter = "0x6802"
+stars_enable = "0x6804"
+flip_x       = "0x6806"
+flip_y       = "0x6807"
+watchdog     = "0x7000 / 0x7800"
+ppi0         = "0x8100"       # 8255 PPI: inputs + sound command
+ppi1         = "0x8200"       # 8255 PPI: dips + sound control + PROTECTION PAL (port C)
+note         = "Inputs are ACTIVE-LOW (idle = all high). Nibble-arithmetic protection PAL on PPI1 port C must be emulated or the game won't run."
+
+[roms]
+rom_zip      = "/home/jon/Downloads/zarcade/theend.zip"
+
+[[roms.files]]
+path = "roms/ic13_1t.bin"   # 0x0000
+[[roms.files]]
+path = "roms/ic14_2t.bin"   # 0x0800
+[[roms.files]]
+path = "roms/ic15_3t.bin"   # 0x1000
+[[roms.files]]
+path = "roms/ic16_4t.bin"   # 0x1800
+[[roms.files]]
+path = "roms/ic17_5t.bin"   # 0x2000
+[[roms.files]]
+path = "roms/ic18_6t.bin"   # 0x2800
+
+[roms.gfx]
+files = ["gfx/ic30_2c.bin", "gfx/ic31_1c.bin"]
+
+[roms.sound]
+files = ["sound/ic56_1.bin", "sound/ic55_2.bin"]   # second-Z80 sound program
+
+[roms.proms]
+file = "6331-1j.86"
+size = 32

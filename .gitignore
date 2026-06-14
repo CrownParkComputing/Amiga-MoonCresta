@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Copyrighted ROM data -- NEVER commit. Users supply their own Moon Cresta ROM
+# and generate mc_romdata.c locally via tools/make_romdata.py.
+# ---------------------------------------------------------------------------
+**/mc_romdata.c
+**/tc_romdata.c
+**/*romdata*.c
+games/*/roms/
+games/*/gfx/
+**/*.6l
+*.rom
+
+# ROM-derived disassembly / transcode (a derivative of the copyrighted ROM)
+games/*/transcode/*.68k
+games/*/transcode/*.inc
+games/*/transcode/*.asm
+games/*/transcode/*.bin
+
+# Disk images / slaves embed the ROM -> not redistributable
+*.adf
+*.slave
+
+# Third-party reference code and artwork (not ours to redistribute)
+/refs/
+/assets/
+
+# Build output + tool junk
+/build/
+*.o
+*.ppm
+*.pgm
+*.png
+__pycache__/
+*.pyc
+*.swp
+
+# stray build/log files
+amiberry.log
+a.out
+ap
+map.txt
+games/*/transcode/
+
+# Game directories: keep ONLY text metadata, never any ROM/PROM/sound/DSP binary
+games/*/*
+!games/*/META.toml
+!games/*/NOTES.md
+!games/*/io_map.json

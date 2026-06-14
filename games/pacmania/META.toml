@@ -1,0 +1,36 @@
+# games/pacmania/META.toml
+# Pac-Mania (Namco 1987). Skeleton; activate by setting rom_zip.
+
+[game]
+name         = "pacmania"
+title        = "Pac-Mania"
+year         = 1987
+manufacturer = "Namco"
+# rom_zip   = "/home/jon/Downloads/zarcade/pacmania.zip"
+
+[video]
+resolution  = [288, 224]
+sprite_size = 16
+tile_size   = 16
+bpp         = 4
+
+[video.layers]
+tilemap_bg = { count = 1, scroll = "isometric_math" }
+tilemap_fg = { count = 1, scroll = "full" }
+sprite     = { count = 128 }
+
+[audio]
+sound_cpu  = "6809E"
+sound_chip = "Namco C140"
+channels   = 8
+
+[io_map]
+file = "io_map.json"
+
+[mcu]
+kind = ""
+
+[build]
+flags  = ["RELEASE", "OCS"]
+target = "pacmania_amiga"
+slave  = "pacmania_amiga.slave"
