@@ -104,30 +104,37 @@ void mc_audio_frame(void)
         if (--fire_t == 0) aud_vol(1, 0);
     }
 
-    /* ---- explosion (ch2): a proper boom, level-driven from the HIT line ----
-     * The board holds HIT high for the whole discharge, so a quick enemy pop
-     * holds it only briefly while a *player death* holds it far longer. We open
-     * with a bright noise "crack" on the rising edge, sweep the noise down into
-     * a low rumble while the line stays held, then decay a short tail when it
-     * releases. Result: enemy kills = short bright pop; player death = a long
-     * falling rumble, no special-casing needed.
-     *   period 230 (bright) .. 230+18*24=662 (deep rumble); age caps the sweep.
-     *   tail = release decay length (also covers blasts too short to sample as
-     *   "held", so even a 1-frame HIT still makes a pop). */
+    /* ---- explosion (ch2) -- two flavours off the HIT line --------------
+     * A quick enemy kill = a short bright pop. A player death holds HIT for
+     * several frames; when we detect that we fire a long low decaying rumble
+     * shaped to a real ship-explosion envelope (profiled from a reference
+     * recording): a brief bright crack, then a fast ~80ms attack into a smooth
+     * exponential decay over ~1.2s, low/noisy and drifting deeper as it fades.
+     * All original synthesis on Paula's noise sample -- no external audio. */
     {
-        static int age = 0, tail = 0;
-        if (machine_io.snd_hit != last_hit) {         /* new blast: reset sweep */
-            last_hit = machine_io.snd_hit; age = 0; tail = 8;
+        static int held = 0, pop = 0, boom = 0, bv = 0;
+        held = machine_io.snd_hit_lvl ? held + 1 : 0;
+
+        if (machine_io.snd_hit != last_hit) {         /* HIT edge -> bright onset crack */
+            last_hit = machine_io.snd_hit;
+            if (boom == 0) pop = 10;
         }
-        if (machine_io.snd_hit_lvl) {                 /* held -> loud + sweeping down */
-            aud_per(2, 230 + (age < 18 ? age : 18) * 24);
-            aud_vol(2, 64);
-            if (age < 100) age++;
-            tail = 8;                                 /* re-arm release tail */
-        } else if (tail > 0) {                        /* released -> decay the boom */
-            aud_per(2, 230 + (age < 18 ? age : 18) * 24);  /* hold last sweep pitch */
-            aud_vol(2, tail * 64 / 8);
-            if (--tail == 0) aud_vol(2, 0);
+        if (held == 4 && boom == 0) {                 /* sustained HIT -> player death */
+            boom = 64; pop = 0;
+        }
+
+        if (boom > 0) {                               /* long, low, decaying rumble */
+            int age = 64 - boom;
+            if (age < 4) bv = (age + 1) * 16;         /* ~80ms attack to full */
+            else { int d = bv >> 4; bv -= (d ? d : 1); }  /* exp body, linear tail -> silence */
+            aud_per(2, 470 + (age < 56 ? age * 3 : 168));  /* deep, drifting lower */
+            aud_vol(2, bv);
+            if (--boom == 0) aud_vol(2, 0);
+        } else if (pop > 0) {                         /* short bright enemy-kill pop */
+            int age = 10 - pop;
+            aud_per(2, 300 + age * 22);
+            aud_vol(2, pop * 64 / 10);
+            if (--pop == 0) aud_vol(2, 0);
         }
     }
 
