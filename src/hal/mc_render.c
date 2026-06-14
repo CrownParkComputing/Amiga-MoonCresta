@@ -253,8 +253,28 @@ static void boot_str(const char *s, int col, int base_row, int color)
         }
     }
 }
-/* Title screen: the game's starfield + title text + a PRESS FIRE prompt, all
- * in the game's ROT90 orientation (so it reads upright, not sideways). */
+/* Same ROT90 placement as boot_str, but using our own clean 8x8 font
+ * (src/hal/mc_font.c, ASCII 0x20..0x5F) -- used for the instructions. */
+extern const unsigned char mc_font[64][8];
+static void font_str(const char *s, int col, int base_row, int color)
+{
+    int idx = (color * 4 + 1) & 31;                /* pen 1 of the colour set */
+    for (int i = 0; *s; s++, i++) {
+        int row = base_row - i, c = (unsigned char)*s;
+        if (c < 0x20 || c > 0x5f) c = 0x20;
+        const unsigned char *g = mc_font[c - 0x20];
+        /* our font is stored upright; the ROM font (which boot_str uses) is
+         * pre-rotated. Map our glyph (row r -> vertical, column k -> horizontal
+         * with the column flipped) through ROT90 so it reads upright, not
+         * sideways or mirrored. */
+        for (int r = 0; r < 8; r++)
+            for (int k = 0; k < 8; k++)
+                if (g[r] & (0x80 >> k)) plot_native(col*8 + r, row*8 + (7 - k), idx);
+    }
+}
+
+/* Title screen: the game's starfield + title text + instructions + a PRESS
+ * FIRE prompt, all in the game's ROT90 orientation (upright, not sideways). */
 void mc_boot_draw(int count)
 {
     unsigned int *q = (unsigned int *)mc_planes;
@@ -264,20 +284,24 @@ void mc_boot_draw(int count)
     if (!mc_stars_built) build_stars();
     for (int i = 0; i < MC_NSTARS; i++)                /* starfield backdrop */
         plot_star(mc_stars[i].nx, mc_stars[i].ny, mc_stars[i].col);
-    /* the player rocket, drawn from the ROM's own sprites (codes 0x10-0x15) */
+    /* the player rocket, drawn from the ROM's own sprites (codes 0x10-0x15),
+     * shifted up (-50) to leave room for the instructions below */
     { static const struct { unsigned char code, b0, b3, col; } rocket[6] = {
         {0x10,120,129,3},{0x12,112,137,4},{0x11,128,137,4},
         {0x14,112,153,5},{0x13,128,153,5},{0x15,120,169,6} };
       for (int i = 0; i < 6; i++)
-        draw_sprite16(rocket[i].code, rocket[i].b3, (240 - rocket[i].b0) & 0xff,
-                      rocket[i].col * 4, 0, 0); }
-    /* args: (col = vertical line position, base_row = horizontal start, colour) */
-    boot_str("MOON CRESTA",    4, 21, 6);              /* yellow title  */
-    boot_str("WHITTY ARCADE",  7, 22, 1);              /* cyan branding */
-    boot_str("2026",           9, 18, 9);
-    boot_str("PRESS FIRE",    26, 21, 5);              /* prompt */
-    boot_str("FULL SPEED",    28, 21, 3);              /* speed note */
-    boot_str("030 OR JIT",    30, 21, 5);
+        draw_sprite16(rocket[i].code, (rocket[i].b3 - 50) & 0xff,
+                      (240 - rocket[i].b0) & 0xff, rocket[i].col * 4, 0, 0); }
+    /* title -- ROM font (args: col = vertical line, base_row = horiz start, colour) */
+    boot_str("MOON CRESTA",    3, 21, 6);              /* yellow */
+    boot_str("WHITTY ARCADE",  5, 22, 1);              /* cyan   */
+    /* instructions -- our own clean font */
+    font_str("UP  INSERT COIN",   18, 23, 5);
+    font_str("FIRE  START SHOOT", 20, 24, 6);
+    font_str("LEFT RIGHT  MOVE",  22, 24, 3);
+    font_str("DOCK YOUR ROCKETS", 24, 24, 1);
+    font_str("030 OR JIT  SPEED", 27, 24, 5);
+    font_str("PRESS FIRE",        30, 21, 6);
 }
 
 /* mem points at the Z80's 64 KB array; VRAM @0x9000, objram @0x9800. */

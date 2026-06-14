@@ -71,7 +71,7 @@ C_SRCS    += \
     $(SRCDIR)/hal/mc_video.c   \
     $(SRCDIR)/hal/mc_render.c  \
     $(SRCDIR)/hal/mc_diag.c    \
-    $(SRCDIR)/hal/mc_romdata.c \
+    $(SRCDIR)/hal/mc_romload.c \
 
 else
 C_SRCS    += \
@@ -79,7 +79,8 @@ C_SRCS    += \
     $(SRCDIR)/hal/mc_render.c  \
     $(SRCDIR)/hal/mc_run.c     \
     $(SRCDIR)/hal/mc_audio.c   \
-    $(SRCDIR)/hal/mc_romdata.c \
+    $(SRCDIR)/hal/mc_font.c    \
+    $(SRCDIR)/hal/mc_romload.c \
 
 endif
 else

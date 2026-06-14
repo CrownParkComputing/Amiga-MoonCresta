@@ -39,30 +39,44 @@ speed:
 
 ---
 
+## The ROM is loaded at runtime
+
+The program does **not** contain the ROM. At startup it loads **`mooncrst.rom`**
+from disk (next to the program). So the build and any release are ROM-free, and
+each user supplies their own `mooncrst.rom`. If it's missing the screen is solid
+**red**.
+
 ## Building
 
 Needs a bare-metal m68k Amiga cross-toolchain (Bebbo's `m68k-amigaos-gcc`),
 `vasm`/`vlink`, and Python `amitools` (for `xdftool`). See `docs/TOOLCHAIN.md`.
 
-1. **Provide your ROM** — put your own files under:
+1. **Build the (ROM-free) program + ADF:**
+   ```
+   make GAME=mooncrst adf             # -> build/mooncrst (exe) + build/mooncrst.adf
+   ```
+2. **Make your `mooncrst.rom`** from a Moon Cresta ROM set you own — put the
+   files under:
    ```
    games/mooncrst/roms/  epr194 … epr201
    games/mooncrst/gfx/   mcs_a mcs_b mcs_c mcs_d
    games/mooncrst/mmi6331.6l
    ```
-2. **Embed the ROM:**
+   then:
    ```
-   python3 tools/make_romdata.py      # writes src/hal/mc_romdata.c (git-ignored)
-   ```
-3. **Build the ADF:**
-   ```
-   make GAME=mooncrst adf             # -> build/mooncrst.adf
+   python3 tools/make_rom.py          # -> build/mooncrst.rom (24608 bytes)
    ```
 
 ## Running
 
-Boot `build/mooncrst.adf` on an A1200 (Kickstart 3.1, AGA). Example Amiberry
-configs are in `run/`. Enable JIT or use an 030+ for full speed.
+Put **`mooncrst.rom`** next to the program:
+
+- **ADF:** write `mooncrst.rom` into the disk root next to `mooncrst`.
+- **WHDLoad / hard drive:** drop `mooncrst.rom` in the same directory as the
+  program/slave.
+
+Then boot on an A1200 (Kickstart 3.1, AGA). Example Amiberry configs are in
+`run/`. Enable **JIT** (or use an **030+**) for full speed.
 
 ---
 

@@ -43,8 +43,19 @@ static void poll_input(void)
     unsigned char in0 = 0x00;
     if (left)  in0 |= 0x04;
     if (right) in0 |= 0x08;
-    if (fire)  in0 |= 0x10;                   /* fire = shoot only (no coin -> no credit pile-up) */
-    if (up)    in0 |= 0x01;                   /* up = insert coin */
+    if (fire)  in0 |= 0x10;                   /* fire = shoot only (no coin) */
+
+    /* Coin (up): debounced rising-edge + a long cooldown, so mouse-quadrature
+     * noise leaking onto the joystick port can't machine-gun credits. One coin
+     * per deliberate press, at most ~1 every 0.75s. */
+    { static int prev_up = 0, hold = 0, cd = 0;
+      if (cd > 0) cd--;
+      if (up && !prev_up && cd == 0) {
+          hold = 4; cd = 45;
+          { extern void mc_audio_coin(void); mc_audio_coin(); }
+      }
+      prev_up = up;
+      if (hold > 0) { in0 |= 0x01; hold--; } }
     machine_io.in0 = in0;
 
     unsigned char in1 = 0x80;                 /* coinage dip default */
@@ -54,8 +65,19 @@ static void poll_input(void)
 
 void hal_game_init(void)
 {
+    extern int mc_load_rom(void);
+    int have_rom = mc_load_rom();   /* load mooncrst.rom from disk while DOS is still alive */
+
     mc_video_open();
     mc_lockout_os();         /* disable OS ints so a window click can't corrupt our display */
+
+    if (!have_rom) {
+        /* mooncrst.rom missing -> solid RED + halt (the font lives in the ROM,
+         * so we can't print text). See README: build/place mooncrst.rom. */
+        *(volatile unsigned short *)0xdff180 = 0x0F00;
+        for (;;) ;
+    }
+
     mc_audio_open();         /* set up Paula audio (DMA-driven, no interrupts) */
 
     /* title screen -- show until the player presses fire (or ~20s timeout) */

@@ -39,6 +39,10 @@ static int8_t *noise = 0;               /* looped noise for explosions */
 static unsigned long last_fire = 0, last_hit = 0;
 static int  fire_t = 0,  fire_per = 0;  /* fire effect countdown / current period */
 static int  hit_t  = 0;                 /* explosion countdown */
+static int  coin_t = 0,  coin_per = 0;  /* insert-coin blip */
+
+/* Triggered from poll_input when a coin is inserted -> a quick rising blip. */
+void mc_audio_coin(void) { coin_t = 14; coin_per = 520; }
 
 static void aud_ptr(int ch, void *s, int words)
 {
@@ -74,8 +78,9 @@ void mc_audio_open(void)
     aud_ptr(0, sq, 1);    aud_vol(0, 0); aud_per(0, 400);
     aud_ptr(1, sq, 1);    aud_vol(1, 0); aud_per(1, 400);
     aud_ptr(2, noise, NOISE_WORDS); aud_vol(2, 0); aud_per(2, 360);
+    aud_ptr(3, sq, 1);    aud_vol(3, 0); aud_per(3, 400);   /* coin */
 
-    c[R_DMACON] = 0x8007;                       /* enable audio DMA ch 0,1,2 */
+    c[R_DMACON] = 0x800F;                       /* enable audio DMA ch 0,1,2,3 */
 }
 
 void mc_audio_frame(void)
@@ -103,12 +108,20 @@ void mc_audio_frame(void)
     /* ---- explosion (ch2): noise, sustained while the HIT line is held, then
      *      decays when released. A long-held HIT (player death) gives a big
      *      sustained blast; a brief pulse gives a short hit. ---- */
-    if (machine_io.snd_hit != last_hit) { last_hit = machine_io.snd_hit; if (hit_t < 9) hit_t = 9; }
-    if (machine_io.snd_hit_lvl && hit_t < 9) hit_t = 9;   /* short sustain cap while held */
+    /* Fixed punchy burst on each HIT edge -- immediate (full volume on frame 1)
+     * with a quick decay, no open-ended sustain (the sustain made it drag). */
+    if (machine_io.snd_hit != last_hit) { last_hit = machine_io.snd_hit; hit_t = 13; }
     if (hit_t > 0) {
-        int held = machine_io.snd_hit_lvl;
-        aud_per(2, 400);
-        aud_vol(2, held ? 64 : hit_t * 7);            /* louder (max 64) + faster decay = shorter */
+        aud_per(2, 380);
+        aud_vol(2, hit_t > 8 ? 64 : hit_t * 8);       /* loud, then fast decay over ~13 frames */
         if (--hit_t == 0) aud_vol(2, 0);
+    }
+
+    /* ---- insert-coin blip (ch3): a quick rising tone ---- */
+    if (coin_t > 0) {
+        aud_per(3, coin_per);
+        aud_vol(3, 42);
+        coin_per -= 30; if (coin_per < 170) coin_per = 170;
+        if (--coin_t == 0) aud_vol(3, 0);
     }
 }
