@@ -25,6 +25,11 @@ games/*/transcode/*.bin
 # Packaged release output (ADF / HD drawer / LHA -- all contain the ROM)
 /dist/
 
+# PyInstaller output for the disk-builder GUI (rebuilt by CI)
+/gui_build/
+/gui_dist/
+*.app/
+
 # Third-party reference code and artwork (not ours to redistribute)
 /refs/
 /assets/

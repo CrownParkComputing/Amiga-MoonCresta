@@ -46,14 +46,26 @@ from disk (next to the program). So the build and any release are ROM-free, and
 each user supplies their own `mooncrst.rom`. If it's missing the screen is solid
 **red**.
 
-## Quick start — package a runnable disk from your MAME romset
+## Quick start — make a runnable disk from your MAME romset
 
-If you just want to play, use the packager. Point it at **your own** MAME
-Moon Cresta romset (the `mooncrst` set — **split or merged**, `.zip` / `.7z` /
-a folder) and it assembles the ROM and builds the disk images for you:
+You supply **your own** MAME Moon Cresta romset (the `mooncrst` set — **split or
+merged**, `.zip` / `.7z` / a folder); the tools assemble the ROM and build the
+disk for you. **Boot the resulting `MoonCresta.adf`** (it has the ROM inside) —
+*not* `build/mooncrst.adf`, which is intentionally ROM-free and shows a red
+screen until a ROM is added.
+
+### Easiest: the Disk Builder app (no Python needed)
+
+Download **Moon Cresta Disk Builder** for your OS from the project's
+[Releases](../../releases) (built by CI for Windows / macOS / Linux). Run it,
+pick your romset, tick the outputs (ADF / hard-drive drawer / LHA), choose a
+folder, press **Build**. The ROM-free program is bundled inside the app.
+
+### Or from a checkout (needs Python)
 
 ```
-python3 tools/build_release.py            # interactive: prompts for the romset
+python3 tools/gui_packager.py             # same GUI, from source (needs tkinter)
+python3 tools/build_release.py            # command line, interactive
 python3 tools/build_release.py mooncrst.zip
 ```
 
