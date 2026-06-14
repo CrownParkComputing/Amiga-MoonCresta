@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: amigadev/crosstools:latest      # m68k-amigaos-gcc + vasm + vlink
+    container: amigadev/crosstools:m68k-amigaos   # m68k-amigaos-gcc + vasm + vlink (in /opt/amiga)
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +34,7 @@ jobs:
       - name: Build ROM-free program + ADF
         run: |
           export PATH="/opt/amiga/bin:$PATH"
-          make GAME=mooncrst adf
+          make GAME=mooncrst adf AMIGA_GCC_HOME=/opt/amiga
 
       - name: Upload ROM-free ADF
         uses: actions/upload-artifact@v4

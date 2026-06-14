@@ -14,7 +14,7 @@ jobs:
   # 1) Build the ROM-free Amiga program + bootable ADF (these get bundled).
   amiga:
     runs-on: ubuntu-latest
-    container: amigadev/crosstools:latest
+    container: amigadev/crosstools:m68k-amigaos
     steps:
       - uses: actions/checkout@v4
       - name: Build ROM-free program + ADF
@@ -22,7 +22,7 @@ jobs:
           apt-get update -y && apt-get install -y python3 python3-pip
           pip3 install --break-system-packages amitools machine68k 2>/dev/null || pip3 install amitools machine68k
           export PATH="/opt/amiga/bin:$PATH"
-          make GAME=mooncrst adf
+          make GAME=mooncrst adf AMIGA_GCC_HOME=/opt/amiga
       - uses: actions/upload-artifact@v4
         with:
           name: romfree
