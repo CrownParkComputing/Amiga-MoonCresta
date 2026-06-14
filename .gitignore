@@ -30,6 +30,11 @@ games/*/transcode/*.bin
 /gui_dist/
 *.app/
 
+# Prebuilt ROM-free program (our own output, no ROM) -- committed so CI can
+# package the GUI without an Amiga toolchain. Explicitly un-ignored.
+!/prebuilt/mooncrst
+!/prebuilt/mooncrst.adf
+
 # Third-party reference code and artwork (not ours to redistribute)
 /refs/
 /assets/

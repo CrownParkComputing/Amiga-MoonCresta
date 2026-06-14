@@ -1,9 +1,9 @@
 name: release-gui
 
 # Builds the downloadable "Moon Cresta Disk Builder" GUI for Windows, macOS and
-# Linux. Each executable bundles the ROM-free program (no copyrighted ROM); the
-# user supplies their own MAME romset at runtime. Trigger by pushing a tag like
-# v1.0, or run manually from the Actions tab.
+# Linux. Each executable bundles the ROM-free program (prebuilt/, no copyrighted
+# ROM); the user supplies their own MAME romset at runtime. Trigger by pushing a
+# tag like v1.0, or run manually from the Actions tab.
 
 on:
   push:
@@ -11,28 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1) Build the ROM-free Amiga program + bootable ADF (these get bundled).
-  amiga:
-    runs-on: ubuntu-latest
-    container: amigadev/crosstools:m68k-amigaos
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build ROM-free program + ADF
-        run: |
-          apt-get update -y && apt-get install -y python3 python3-pip
-          pip3 install --break-system-packages amitools     # xdftool; machine68k not needed
-          export PATH="/opt/amiga/bin:$PATH"
-          make GAME=mooncrst adf AMIGA_GCC_HOME=/opt/amiga
-      - uses: actions/upload-artifact@v4
-        with:
-          name: romfree
-          path: |
-            build/mooncrst
-            build/mooncrst.adf
-
-  # 2) Bundle the GUI into a standalone executable per OS.
   gui:
-    needs: amiga
     strategy:
       fail-fast: false
       matrix:
@@ -52,13 +31,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Get the ROM-free program
-        uses: actions/download-artifact@v4
-        with:
-          name: romfree
-          path: build
       - name: Install build deps
-        run: pip install pyinstaller amitools
+        run: pip install pyinstaller amitools     # amitools=xdftool; machine68k not needed
       - name: Build executable
         run: pyinstaller tools/packager.spec --distpath gui_dist --workpath gui_build --noconfirm
       - name: Rename for upload
