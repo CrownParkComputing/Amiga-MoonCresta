@@ -10,6 +10,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: write          # needed to create/update the GitHub Release
+
 jobs:
   gui:
     strategy:
