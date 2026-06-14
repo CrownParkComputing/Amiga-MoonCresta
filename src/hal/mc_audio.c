@@ -38,7 +38,6 @@ static int8_t *noise = 0;               /* looped noise for explosions */
 
 static unsigned long last_fire = 0, last_hit = 0;
 static int  fire_t = 0,  fire_per = 0;  /* fire effect countdown / current period */
-static int  hit_t  = 0;                 /* explosion countdown */
 static int  coin_t = 0,  coin_per = 0;  /* insert-coin blip */
 
 /* Triggered from poll_input when a coin is inserted -> a quick rising blip. */
@@ -105,16 +104,31 @@ void mc_audio_frame(void)
         if (--fire_t == 0) aud_vol(1, 0);
     }
 
-    /* ---- explosion (ch2): noise, sustained while the HIT line is held, then
-     *      decays when released. A long-held HIT (player death) gives a big
-     *      sustained blast; a brief pulse gives a short hit. ---- */
-    /* Fixed punchy burst on each HIT edge -- immediate (full volume on frame 1)
-     * with a quick decay, no open-ended sustain (the sustain made it drag). */
-    if (machine_io.snd_hit != last_hit) { last_hit = machine_io.snd_hit; hit_t = 13; }
-    if (hit_t > 0) {
-        aud_per(2, 380);
-        aud_vol(2, hit_t > 8 ? 64 : hit_t * 8);       /* loud, then fast decay over ~13 frames */
-        if (--hit_t == 0) aud_vol(2, 0);
+    /* ---- explosion (ch2): a proper boom, level-driven from the HIT line ----
+     * The board holds HIT high for the whole discharge, so a quick enemy pop
+     * holds it only briefly while a *player death* holds it far longer. We open
+     * with a bright noise "crack" on the rising edge, sweep the noise down into
+     * a low rumble while the line stays held, then decay a short tail when it
+     * releases. Result: enemy kills = short bright pop; player death = a long
+     * falling rumble, no special-casing needed.
+     *   period 230 (bright) .. 230+18*24=662 (deep rumble); age caps the sweep.
+     *   tail = release decay length (also covers blasts too short to sample as
+     *   "held", so even a 1-frame HIT still makes a pop). */
+    {
+        static int age = 0, tail = 0;
+        if (machine_io.snd_hit != last_hit) {         /* new blast: reset sweep */
+            last_hit = machine_io.snd_hit; age = 0; tail = 8;
+        }
+        if (machine_io.snd_hit_lvl) {                 /* held -> loud + sweeping down */
+            aud_per(2, 230 + (age < 18 ? age : 18) * 24);
+            aud_vol(2, 64);
+            if (age < 100) age++;
+            tail = 8;                                 /* re-arm release tail */
+        } else if (tail > 0) {                        /* released -> decay the boom */
+            aud_per(2, 230 + (age < 18 ? age : 18) * 24);  /* hold last sweep pitch */
+            aud_vol(2, tail * 64 / 8);
+            if (--tail == 0) aud_vol(2, 0);
+        }
     }
 
     /* ---- insert-coin blip (ch3): a quick rising tone ---- */

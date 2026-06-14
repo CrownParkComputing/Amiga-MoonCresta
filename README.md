@@ -46,7 +46,35 @@ from disk (next to the program). So the build and any release are ROM-free, and
 each user supplies their own `mooncrst.rom`. If it's missing the screen is solid
 **red**.
 
-## Building
+## Quick start — package a runnable disk from your MAME romset
+
+If you just want to play, use the packager. Point it at **your own** MAME
+Moon Cresta romset (the `mooncrst` set — **split or merged**, `.zip` / `.7z` /
+a folder) and it assembles the ROM and builds the disk images for you:
+
+```
+python3 tools/build_release.py            # interactive: prompts for the romset
+python3 tools/build_release.py mooncrst.zip
+```
+
+It matches the ROMs by **CRC32** (so filenames and split-vs-merged don't
+matter) and writes to `dist/`:
+
+| Output | What it is |
+|--------|-----------|
+| `dist/MoonCresta.adf` | bootable floppy image |
+| `dist/MoonCresta_HD/` | hard-drive drawer — copy anywhere, run `mooncrst` |
+| `dist/MoonCresta.lha` | the HD drawer as an archive (needs `lha`/`jlha` — see below) |
+
+The packager needs `xdftool` (`pip install amitools`) and a prebuilt ROM-free
+program (it's in `build/` after `make adf`, or download the **ROM-free ADF**
+from this repo's CI artifacts and pass `--adf`/`--exe`). For the `.lha` output
+install a creating-capable LhA: Debian/Ubuntu `apt install jlha-utils`, macOS
+`brew install lhasa`, or build [`jca02266/lha`](https://github.com/jca02266/lha).
+Nothing it writes (the ROM, the populated disks) is ever committed — `dist/`
+is git-ignored.
+
+## Building from source
 
 Needs a bare-metal m68k Amiga cross-toolchain (Bebbo's `m68k-amigaos-gcc`),
 `vasm`/`vlink`, and Python `amitools` (for `xdftool`). See `docs/TOOLCHAIN.md`.

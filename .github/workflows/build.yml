@@ -1,10 +1,13 @@
 name: build
 
-# Builds the Moon Cresta ADF in CI. The ROM is copyrighted and is NOT in the
-# repo, so a full ADF build only runs when the maintainer has added their own
-# ROM set as a base64 secret (MOONCRESTA_ROM_B64 = base64 of a tar.gz that
-# expands to games/mooncrst/{roms,gfx,mmi6331.6l}). Without it, CI just does a
-# compile-check of the ROM-independent core.
+# The program is ROM-free (it loads mooncrst.rom at runtime), so the ROM-free
+# ADF is built and published on every push. The ROM is copyrighted and is NOT
+# in the repo -- to also smoke-test the release packager (tools/build_release.py
+# -> ADF + HD drawer + LHA) the maintainer can add their own ROM set as a
+# base64 secret (MOONCRESTA_ROM_B64 = base64 of a tar.gz expanding to
+# games/mooncrst/{roms,gfx,mmi6331.6l}). ROM-containing outputs are NEVER
+# uploaded (public artifacts would redistribute the ROM); only the ROM-free
+# ADF is published.
 
 on:
   push:
@@ -20,39 +23,37 @@ jobs:
 
       - name: Host tools
         run: |
-          apt-get update -y && apt-get install -y python3 python3-pip
+          apt-get update -y
+          apt-get install -y python3 python3-pip
+          # A creating-capable LhA (jlha-utils) so the packager can build any of
+          # ADF / HD / LHA. lhasa is the extract-only fallback.
+          apt-get install -y jlha-utils || apt-get install -y lhasa || true
           pip3 install --break-system-packages amitools machine68k 2>/dev/null \
             || pip3 install amitools machine68k
 
-      - name: Provide ROM (from secret, if configured)
-        env:
-          ROM_B64: ${{ secrets.MOONCRESTA_ROM_B64 }}
-        run: |
-          if [ -n "$ROM_B64" ]; then
-            echo "$ROM_B64" | base64 -d > /tmp/rom.tar.gz
-            tar xzf /tmp/rom.tar.gz
-            python3 tools/make_romdata.py
-            echo "HAVE_ROM=1" >> "$GITHUB_ENV"
-          else
-            echo "No MOONCRESTA_ROM_B64 secret -> compile-check only."
-          fi
-
-      - name: Build ADF
-        if: env.HAVE_ROM == '1'
+      - name: Build ROM-free program + ADF
         run: |
           export PATH="/opt/amiga/bin:$PATH"
           make GAME=mooncrst adf
 
-      - name: Upload ADF artifact
-        if: env.HAVE_ROM == '1'
+      - name: Upload ROM-free ADF
         uses: actions/upload-artifact@v4
         with:
-          name: mooncrst-adf
-          path: build/mooncrst.adf
+          name: mooncrst-adf-romfree
+          path: build/mooncrst.adf      # ROM-free: drop your own mooncrst.rom in the root
 
-      - name: Compile check (no ROM)
-        if: env.HAVE_ROM != '1'
+      - name: Smoke-test the release packager (only if ROM secret is configured)
+        env:
+          ROM_B64: ${{ secrets.MOONCRESTA_ROM_B64 }}
         run: |
-          gcc -O2 -Isrc/cores -Isrc/hal -c src/cores/z80.c   -o /tmp/z80.o
-          gcc -O2 -Isrc/cores -Isrc/hal -c src/hal/machine.c -o /tmp/machine.o
-          echo "Core compiles. Add the MOONCRESTA_ROM_B64 secret to build a full ADF."
+          if [ -z "$ROM_B64" ]; then
+            echo "No MOONCRESTA_ROM_B64 secret -> skipping packager smoke test."
+            exit 0
+          fi
+          echo "$ROM_B64" | base64 -d > /tmp/rom.tar.gz
+          tar xzf /tmp/rom.tar.gz                       # -> games/mooncrst/{roms,gfx,mmi6331.6l}
+          export PATH="/opt/amiga/bin:$PATH"
+          python3 tools/build_release.py games/mooncrst --no-build
+          echo "=== produced (NOT uploaded -- contains the ROM) ==="
+          ls -la dist/
+          if [ -f dist/MoonCresta.lha ]; then (lha l dist/MoonCresta.lha || jlha l dist/MoonCresta.lha) || true; fi

@@ -16,9 +16,14 @@ games/*/transcode/*.inc
 games/*/transcode/*.asm
 games/*/transcode/*.bin
 
-# Disk images / slaves embed the ROM -> not redistributable
+# Disk images / slaves / archives embed the ROM -> not redistributable
 *.adf
 *.slave
+*.lha
+*.lzh
+
+# Packaged release output (ADF / HD drawer / LHA -- all contain the ROM)
+/dist/
 
 # Third-party reference code and artwork (not ours to redistribute)
 /refs/
