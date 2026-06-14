@@ -28,8 +28,9 @@ jobs:
           # A creating-capable LhA (jlha-utils) so the packager can build any of
           # ADF / HD / LHA. lhasa is the extract-only fallback.
           apt-get install -y jlha-utils || apt-get install -y lhasa || true
-          pip3 install --break-system-packages amitools machine68k 2>/dev/null \
-            || pip3 install amitools machine68k
+          # amitools (xdftool) for the ADF; machine68k is only its optional
+          # 'vamos' extra and isn't needed here (and won't build in this image).
+          pip3 install --break-system-packages amitools
 
       - name: Build ROM-free program + ADF
         run: |
